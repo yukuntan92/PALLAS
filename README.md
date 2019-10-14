@@ -32,14 +32,14 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 ## Running instructions (the tool is executed from a command line)
 
-1. **Two parameters are necessary. (Required)**
+**Two parameters are necessary. (Required)**
 
 - input: the data path need to be given
 
 - data_type: the tool accept two kinds of data - RNA-Seq data and microarray data. "rnaseq" or "microarray" need to be given.
 
 
-2. **There are several parameters that can be adjusted by the user which can make the inference more accurate. (Optional)**
+**There are several parameters that can be adjusted by the user which can make the inference more accurate. (Optional)**
 
 - noise: the search space of process noise need to be given with format "x-x" ("lower-upper"). The process noise is the noise when the gene transit from one state to another. 0-0.1 is default which means at most 10% probability that gene get opposite value.
 
