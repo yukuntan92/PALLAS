@@ -16,13 +16,9 @@ Document content
 Installation
 ----
 
-SSH
-
-`git@github.tamu.edu:yukuntan/Gene-regulatory-network-inference.git`
-
 HTTPS
 
-`https://github.tamu.edu/yukuntan/Gene-regulatory-network-inference.git`
+`https://github.com/yukuntan92/PAPFA.git`
 
 Dependencies (Python 3)
 ----
