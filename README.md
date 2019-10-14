@@ -71,6 +71,7 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 ## Input format
 
+```
 A	B	C	D 
 
 49.13	26.11	59.06	53.41
@@ -84,6 +85,7 @@ A	B	C	D
 54.06	50.29	53.06	35.29
 
 28.90	35.13	48.87	43.95
+```
 
 The 1st line is gene_id. From the 2rd line to the 7th line are the microarray time-series data from time one to time six. Each column is split by tab. If we have two samples and each sample has data length of 3, then the input format should the same with the example above (from 2rd to 4th is the first sample from time one to three and from 5th to 7th is the second sample from time one to time three). Currently, each sample should have the same data length and missing value is not accepted.
 
