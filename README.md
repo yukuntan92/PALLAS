@@ -1,10 +1,8 @@
-# PAMFA
-======
+## PAMFA
 
 A Python package for inference of gene regulatory networks from noisy gene expression data
 
-# Document content
-----
+## Document content
 
 - Installation
 - Dependencies
@@ -13,19 +11,17 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 - Examples
 - Reference
 
-# Installation
-----
+## Installation
 
-SSH
+**SSH**
 
 `git@github.com:yukuntan92/PAPFA.git`
 
-HTTPS
+**HTTPS**
 
 `https://github.com/yukuntan92/PAPFA.git`
 
-# Dependencies (Python 3)
-----
+## Dependencies (Python 3)
 
 - numpy
 - math
@@ -34,17 +30,16 @@ HTTPS
 - tqdm
 - scipy
 
-# Running instructions (the tool is executed from a command line)
-----
+## Running instructions (the tool is executed from a command line)
 
-## Two parameters are necessary. (Required)
+**Two parameters are necessary. (Required)**
 
 - input: the data path need to be given
 
 - data_type: the tool accept two kinds of data - RNA-Seq data and microarray data. "rnaseq" or "microarray" need to be given.
 
 
-## There are several parameters that can be adjusted by the user which can make the inference more accurate. (Optional)
+**There are several parameters that can be adjusted by the user which can make the inference more accurate. (Optional)**
 
 - noise: the search space of process noise need to be given with format "x-x" ("lower-upper"). The process noise is the noise when the gene transit from one state to another. 0-0.1 is default which means at most 10% probability that gene get opposite value.
 
@@ -74,8 +69,7 @@ HTTPS
 
 - sample: the number of samples in the input data. Default is 1.
 
-# Input format
-----
+## Input format
 
 A	B	C	D 
 
@@ -93,12 +87,11 @@ A	B	C	D
 
 The 1st line is gene_id. From the 2rd line to the 7th line are the microarray time-series data from time one to time six. Each column is split by tab. If we have two samples and each sample has data length of 3, then the input format should the same with the example above (from 2rd to 4th is the first sample from time one to three and from 5th to 7th is the second sample from time one to time three). Currently, each sample should have the same data length and missing value is not accepted.
 
-# Examples
-----
+## Examples
 
 Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition with data length equal to forty.
 
-./PAPFA.py input=example/micro_data.txt data_type=microarray damage=1 iteration=1000
+`./PAPFA.py input=example/micro_data.txt data_type=microarray damage=1 iteration=1000`
 
 ```
 dict_items([('input', 'example/micro_data.txt'), ('data_type', 'Gaussian'), ('noise', [0, 0.1]), ('baseline', [5.2089995, 38.9329854040625]), ('delta', [8.009887228645832, 57.75364759]), ('variance', [0.01, 126.36746947304513]), ('diff_baseline', False), ('diff_delta', False), ('diff_variance', False), ('fish', 60), ('iteration', 1000), ('lambda', 0.01), ('particle', 16), ('damage', 1), ('sample', 1)])
@@ -133,8 +126,7 @@ environmental noise = 66.44
 ```
 
 
-# Reference
-----
+## Reference
 
 1. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "Construction of Gene Regulatory Networks Using Partially Observable Boolean Dynamical System and Swarm Intelligence." in process. 
 
