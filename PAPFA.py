@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import math, sys, random
+import sys
 from itertools import product
-from fss import *
+from PAPFA.fss import *
 
-argumentsValues = {'data':'', 'data_type':'', 'noise':[0, 0.1], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'input':False, 'sample':1}
+argumentsValues = {'input':'', 'data_type':'', 'noise':[0, 0.1], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'damage':False, 'sample':1}
 
 def main(argv=sys.argv):
     for arg in sys.argv:
@@ -15,7 +15,7 @@ def main(argv=sys.argv):
             break
         if '.py' not in arg:
             name, val = arg.split('=')
-            if name == 'data':
+            if name == 'input':
                 argumentsValues[name] = val
             elif name == 'data_type':
                 if val == 'rnaseq':
@@ -36,7 +36,7 @@ def main(argv=sys.argv):
                     argumentsValues[name] = True
                 else:
                     argumentsValues[name] = False
-            elif name == 'input':
+            elif name == 'damage':
                 if val == 'False':
                     argumentsValues[name] = False
                 else:
@@ -44,14 +44,14 @@ def main(argv=sys.argv):
 
     data = []
     if argumentsValues['data_type'] == 'NB':
-        with open(argumentsValues['data'], 'r') as f:
+        with open(argumentsValues['input'], 'r') as f:
             next(f)
             for line in f:
                 line_data = line.split('\t')
                 l = [elem.rstrip() for elem in line_data]
                 data.append(list(map(int, l)))
     else:
-        with open(argumentsValues['data'], 'r') as f:
+        with open(argumentsValues['input'], 'r') as f:
             next(f)
             for line in f:
                 line_data = line.split('\t')
@@ -63,7 +63,6 @@ def main(argv=sys.argv):
     data_max = np.max(data)
     data_min = np.min(data)
     data_mean = np.mean(data)
-    print(data_max, data_min, data_mean)
 
     num_baseline = 1
     num_delta = 1
@@ -102,7 +101,7 @@ def main(argv=sys.argv):
         if argumentsValues['delta'] == '':
             argumentsValues['delta'] = [min(data_max - data_mean, data_mean - data_min) / 3, data_max - data_min]
         if argumentsValues['variance'] == '':
-            argumentsValues['variance'] = [0.01, (min(data_max - data_mean, data_mean - data_min) / 2) ** 2]
+            argumentsValues['variance'] = [0.01, (max(data_max - data_mean, data_mean - data_min) / 3) ** 2]
 
     school_size = argumentsValues['fish']
     num_iterations = argumentsValues['iteration']
@@ -111,17 +110,21 @@ def main(argv=sys.argv):
     lam = argumentsValues['lambda']
     model = ["noise", argumentsValues['data_type'], ["baseline"] * num_baseline, ["delta"] * num_delta, ["variance"] * num_variance, argumentsValues['depth']]        # [noise, model, sequencing depth, baseline, delta, inverse dispersion]
     search_area = np.array([float(argumentsValues['noise'][0]), float(argumentsValues['noise'][1]), float(argumentsValues['baseline'][0]), float(argumentsValues['baseline'][1]), float(argumentsValues['delta'][0]), float(argumentsValues['delta'][1]), float(argumentsValues['variance'][0]), float(argumentsValues['variance'][1])])        # [noise_range, baseline_range, delta_range, variance_range]
-    dim_unk = [num_gene ** 2, 1, num_baseline, num_delta, num_variance]       # dim_unk = [discrete unk par, continous unk par]
+    dim_unk = [num_gene ** 2, 1, num_baseline, num_delta, num_variance]       # dim_unk = [the number of unknown discrete parameter, the number of unknown continous parameter]
     
     inpt = np.zeros(num_gene)
-    if argumentsValues['input'] != False:
-        inpt[argumentsValues['input'] - 1,] = 1
+    if argumentsValues['damage'] != False:
+        inpt[argumentsValues['damage'] - 1,] = 1
     bias = -1/2 * np.ones(num_gene) + inpt
 
-    print(argumentsValues.items())
+    if argumentsValues['data_type'] == 'NB':
+        print(argumentsValues.items())
+    else:
+        argumentsValues.pop('depth')
+        print(argumentsValues.items())
     
     all_poss_state = []
-    for i in product([0.0, 1.0], repeat = num_gene):
+    for i in product([0.0, 1.0], repeat=num_gene):
         all_poss_state.append(i)
     all_poss_state = np.array(all_poss_state)
     [beta, unk, school] = fish_school_search(dim_unk, num_gene, bias, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample)
@@ -134,10 +137,14 @@ def main(argv=sys.argv):
             print(str(row) + '\t'+str(col) + '\t' + 'activation' + '\n')
         elif np.allclose(unk[i], -1):
             print(str(row) + '\t' + str(col) + '\t' + 'inhibition' + '\n')
-    print('process noise = {}'.format(unk[num_gene ** 2]) + '\n')
-    print('baseline = {}'.format(unk[num_gene ** 2 + 1 : num_gene ** 2 + 1 + num_baseline]) + '\n')
-    print('delta = {}'.format(unk[num_gene ** 2 + 1 + num_baseline : num_gene ** 2 + 1 + num_baseline + num_delta]) + '\n')
-    print('environmental noise = {}'.format(unk[num_gene ** 2 + 1 + num_baseline + num_delta :]) + '\n')
+    noise = np.around(unk[num_gene ** 2], decimals=3)
+    base = np.around(unk[num_gene ** 2 + 1 : num_gene ** 2 + 1 + num_baseline], decimals=2)
+    delt = np.around(unk[num_gene ** 2 + 1 + num_baseline : num_gene ** 2 + 1 + num_baseline + num_delta], decimals=2)
+    env_noise = np.around(unk[num_gene ** 2 + 1 + num_baseline + num_delta :], decimals=2)
+    print('process noise = {}'.format(str(noise) + '\n'))
+    print('baseline = {}'.format('\t'.join(map(str, base)) + '\n'))
+    print('delta = {}'.format('\t'.join(map(str, delt)) + '\n'))
+    print('environmental noise = {}'.format('\t'.join(map(str, env_noise)) + '\n'))
 
 if __name__ == "__main__":
     main()

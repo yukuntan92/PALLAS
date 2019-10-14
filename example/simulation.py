@@ -20,9 +20,9 @@ net_connection = np.array([[0,0,-1,0],[1,0,-1,-1],[0,1,0,0],[-1,1,1,0]])
 bias = np.array([-1/2,-1/2,-1/2,-1/2]) + np.array([1,0,0,0]) 
 net = np.vstack((net_connection.T,bias))
 X = [0,1,0,1]
-model = [0.01, 'Gaussian', 30, 20, 49]
-#model = [0.01, 'NB', 22.52, [0.1] * 4, [2] * 4, [5] * 4]
-with open('ga_data.txt', 'w') as f:
+model = [0.05, 'Gaussian', 30, 20, 49]
+#model = [0.05, 'NB', 22.52, [0.1] * 4, [2] * 4, [5] * 4]
+with open('micro_data.txt', 'w') as f:
     f.write('A\tB\tC\tD\n')
     for _ in range(50):
         [X, observation] = simulate(X, model, net)
