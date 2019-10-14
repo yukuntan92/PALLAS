@@ -16,6 +16,10 @@ Document content
 Installation
 ----
 
+SSH
+
+`git@github.com:yukuntan92/PAPFA.git`
+
 HTTPS
 
 `https://github.com/yukuntan92/PAPFA.git`
