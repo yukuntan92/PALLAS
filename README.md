@@ -91,7 +91,7 @@ The 1st line is gene_id. From the 2rd line to the 7th line are the microarray ti
 
 ## Examples
 
-Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition with data length equal to forty.
+Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition with data length equal to forty. Since the p53-MDM2 network is small which just has only 4 genes, so we set iteration equal to 1000 to save time while ensuring accuracy. However, if the network is larger than that or you perfer more stable result, the default value 5000 will be a good selection.
 
 `./PAPFA.py input=example/micro_data.txt data_type=microarray damage=1 iteration=1000`
 
