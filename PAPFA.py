@@ -6,7 +6,7 @@ import sys
 from itertools import product
 from PAPFA.fss import *
 
-argumentsValues = {'input':'', 'data_type':'', 'noise':[0, 0.1], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'damage':False, 'sample':1}
+argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'damage':False, 'sample':1, 'running_time':1, 'full_info':False}
 
 def main(argv=sys.argv):
     for arg in sys.argv:
@@ -27,11 +27,11 @@ def main(argv=sys.argv):
                     break
             elif name == 'noise' or name == 'baseline' or name == 'delta' or name == 'variance':
                 argumentsValues[name] = list(val.split('-'))
-            elif name == 'fish' or name == 'iteration' or name == 'particle' or name == 'sample':
+            elif name == 'fish' or name == 'iteration' or name == 'particle' or name == 'sample' or name == 'running_time':
                 argumentsValues[name] = int(val)
             elif name == 'lambda' or name == 'depth':
                 argumentsValues[name] = float(val)
-            elif name == 'diff_baseline' or name == 'diff_delta' or name == 'diff_variance':
+            elif name == 'diff_baseline' or name == 'diff_delta' or name == 'diff_variance' or name == 'full_info':
                 if val == 'True':
                     argumentsValues[name] = True
                 else:
@@ -127,24 +127,43 @@ def main(argv=sys.argv):
     for i in product([0.0, 1.0], repeat=num_gene):
         all_poss_state.append(i)
     all_poss_state = np.array(all_poss_state)
-    [beta, unk, school] = fish_school_search(dim_unk, num_gene, bias, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample)
-    print(unk)
-    print('Source\tTarget\tInteraction\n')
-    for i in range(num_gene ** 2):
-        row = i%num_gene + 1
-        col = i//num_gene + 1
-        if np.allclose(unk[i], 1):
-            print(str(row) + '\t'+str(col) + '\t' + 'activation' + '\n')
-        elif np.allclose(unk[i], -1):
-            print(str(row) + '\t' + str(col) + '\t' + 'inhibition' + '\n')
-    noise = np.around(unk[num_gene ** 2], decimals=3)
-    base = np.around(unk[num_gene ** 2 + 1 : num_gene ** 2 + 1 + num_baseline], decimals=2)
-    delt = np.around(unk[num_gene ** 2 + 1 + num_baseline : num_gene ** 2 + 1 + num_baseline + num_delta], decimals=2)
-    env_noise = np.around(unk[num_gene ** 2 + 1 + num_baseline + num_delta :], decimals=2)
-    print('process noise = {}'.format(str(noise) + '\n'))
-    print('baseline = {}'.format('\t'.join(map(str, base)) + '\n'))
-    print('delta = {}'.format('\t'.join(map(str, delt)) + '\n'))
-    print('environmental noise = {}'.format('\t'.join(map(str, env_noise)) + '\n'))
+    result = []
+    for _ in range(argumentsValues['running_time']):
+        [beta, unk, school] = fish_school_search(dim_unk, num_gene, bias, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample)
+        result.append((beta, unk))
+    result.sort(key=lambda x: (-x[0], sum(abs(x[1][:num_gene ** 2]))))
+                
+    for i in range(argumentsValues['running_time']):
+        num = i + 1
+        res = result[i][1]
+        print('Ranking' + ' ' + str(num))
+        print('Source\tTarget\tInteraction\n')
+        for j in range(num_gene ** 2):
+            row = j%num_gene + 1
+            col = j//num_gene + 1
+            if np.allclose(res[j], 1):
+                print(str(row) + '\t'+str(col) + '\t' + 'activation' + '\n')
+            elif np.allclose(res[j], -1):
+                print(str(row) + '\t' + str(col) + '\t' + 'inhibition' + '\n')
+        noise = np.around(res[num_gene ** 2], decimals=3)
+        base = np.around(res[num_gene ** 2 + 1 : num_gene ** 2 + 1 + num_baseline], decimals=2)
+        delt = np.around(res[num_gene ** 2 + 1 + num_baseline : num_gene ** 2 + 1 + num_baseline + num_delta], decimals=2)
+        env_noise = np.around(res[num_gene ** 2 + 1 + num_baseline + num_delta :], decimals=2)
+        likelihood = np.around(result[i][0], decimals=3)
+        if argumentsValues['full_info']:
+            print('process noise = {}'.format(str(noise) + '\n'))
+            print('baseline = {}'.format('\t'.join(map(str, base)) + '\n'))
+            print('delta = {}'.format('\t'.join(map(str, delt)) + '\n'))
+            print('environmental noise = {}'.format('\t'.join(map(str, env_noise)) + '\n'))
+            print('log-likelihood = {}'.format(str(likelihood) + '\n'))
+        if noise in [float(argumentsValues['noise'][0]), float(argumentsValues['noise'][1])] and argumentsValues['noise'][0] != argumentsValues['noise'][1]:
+            print('Warning! The estimated noise hit the boundary [', argumentsValues['noise'][0], ',', argumentsValues['noise'][1], '], please define a larger search space')
+        if float(argumentsValues['baseline'][0]) in base or float(argumentsValues['baseline'][1]) in base:
+            print('Warning! The estimated baseline hit the boundary [', argumentsValues['baseline'][0], ',', argumentsValues['baseline'][1], '], please define a larger search space')
+        if float(argumentsValues['delta'][0]) in delt or float(argumentsValues['delta'][1]) in delt:
+            print('Warning! The estimated delta hit the boundary [', argumentsValues['delta'][0], ',', argumentsValues['delta'][1], '], please define a larger search space')
+        if float(argumentsValues['variance'][0]) in env_noise or float(argumentsValues['variance'][1]) in env_noise:
+            print('Warning! The estimated variance hit the boundary [', argumentsValues['variance'][0], ',', argumentsValues['variance'][1], '], please define a larger search space')
 
 if __name__ == "__main__":
     main()
