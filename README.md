@@ -1,4 +1,4 @@
-## PAMFA
+## PALLAS
 
 A Python package for inference of gene regulatory networks from noisy gene expression data
 
@@ -15,11 +15,11 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 **SSH**
 
-`git@github.com:yukuntan92/PAPFA.git`
+`git@github.com:yukuntan92/PALLAS.git`
 
 **HTTPS**
 
-`https://github.com/yukuntan92/PAPFA.git`
+`https://github.com/yukuntan92/PALLAS.git`
 
 ## Dependencies (Python 3)
 
@@ -65,9 +65,13 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 - **depth**: the sequencing depth of gene (needed by RNA-Seq data only). Based on [3]: depth=1.02 (1K-50K reads); depth=22.52 (500K-550K reads); depth=196.43 (5M-5M+50K reads). Default value is 22.52.
 
-- **damage**: the damaged gene in gene network, e.g. if we know Gene 1 is damaged, then damage=1. Default is 'False'.
+- **pos_bias**: the default value is False (bias is -1/2), meaning that an equal number of activation and inhibition inputs will produce inhibition. The user can define any gene has a positive bias or all genes have poitive biases (1/2), e.g. pos_bias=All (all genes) or pos_bias=1 (the first gene has positive bias).  
 
 - **sample**: the number of samples in the input data. Default is 1.
+
+- **running_time**: the number of times running by the tool. The tool will give ranks for the output results based on log-likelihood score and if the log-likelihood is equal, the sparser network will be ranked ahead.
+
+- **full_info**: the default value if False, which only shows the inferred network. If the value of full_info is True, the result will also show the parameters estimated by the tool, e.g. baseline, delta, environmental noise and log-likelihood.
 
 ## Input format
 
@@ -93,10 +97,10 @@ The 1st line is gene_id. From the 2rd line to the 7th line are the microarray ti
 
 Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition with data length equal to forty. Since the p53-MDM2 network is small which just has only 4 genes, so we set iteration equal to 1000 to save time while ensuring accuracy. However, if the network is larger than that or you perfer more stable result, the default value 5000 will be a good selection.
 
-`./PAPFA.py input=example/micro_data.txt data_type=microarray damage=1 iteration=1000`
+`./PALLAS.py input=example/micro_data.txt data_type=microarray pos_bias=1 iteration=1000 full_info=True`
 
 ```
-dict_items([('input', 'example/micro_data.txt'), ('data_type', 'Gaussian'), ('noise', [0, 0.1]), ('baseline', [5.2089995, 38.9329854040625]), ('delta', [8.009887228645832, 57.75364759]), ('variance', [0.01, 126.36746947304513]), ('diff_baseline', False), ('diff_delta', False), ('diff_variance', False), ('fish', 60), ('iteration', 1000), ('lambda', 0.01), ('particle', 16), ('damage', 1), ('sample', 1)])
+dict_items([('input', 'example/micro_data.txt'), ('data_type', 'Gaussian'), ('noise', [0.05, 0.05]), ('baseline', [5.2089995, 38.9329854040625]), ('delta', [8.009887228645832, 57.75364759]), ('variance', [0.01, 126.36746947304513]), ('diff_baseline', False), ('diff_delta', False), ('diff_variance', False), ('fish', 60), ('iteration', 1000), ('lambda', 0.01), ('particle', 16), ('pos_bias', [1]), ('sample', 1), ('running_time', 1), ('full_info', True)])
 
 100%|██████████████████████████████████████████████████████| 1000/1000 [12:26<00:00,  1.34it/s]
 
@@ -130,7 +134,7 @@ environmental noise = 66.44
 
 ## Reference
 
-1. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "Construction of Gene Regulatory Networks Using Partially Observable Boolean Dynamical System and Swarm Intelligence." in process. 
+1. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "PALLAS: Penalized mAximum LikeLihood via pArticle Swarm optimization for Inference of Gene Regulatory Networks." in process
 
 2. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "Inference of Gene Regulatory Networks by Maximum-likelihood Adaptive Filtering and Discrete Fish School Search." 2018 IEEE 28th International Workshop on Machine Learning for Signal Processing (MLSP). IEEE, 2018.
 

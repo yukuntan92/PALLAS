@@ -6,7 +6,7 @@ import sys
 from itertools import product
 from PAPFA.fss import *
 
-argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'damage':False, 'sample':1, 'running_time':1, 'full_info':False}
+argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'pos_bias':False, 'sample':1, 'running_time':1, 'full_info':False}
 
 def main(argv=sys.argv):
     for arg in sys.argv:
@@ -26,7 +26,7 @@ def main(argv=sys.argv):
                     raise TypeError('incorrect argument '+arg)
                     break
             elif name == 'noise' or name == 'baseline' or name == 'delta' or name == 'variance':
-                argumentsValues[name] = list(val.split('-'))
+                argumentsValues[name] = [float(i) for i in list(val.split('-'))]
             elif name == 'fish' or name == 'iteration' or name == 'particle' or name == 'sample' or name == 'running_time':
                 argumentsValues[name] = int(val)
             elif name == 'lambda' or name == 'depth':
@@ -36,11 +36,13 @@ def main(argv=sys.argv):
                     argumentsValues[name] = True
                 else:
                     argumentsValues[name] = False
-            elif name == 'damage':
+            elif name == 'pos_bias':
                 if val == 'False':
                     argumentsValues[name] = False
+                elif val == 'All':
+                    argumentsValues[name] = 'All'
                 else:
-                    argumentsValues[name] = int(val)
+                    argumentsValues[name] = [int(i) for i in list(val.split(','))]
 
     data = []
     if argumentsValues['data_type'] == 'NB':
@@ -109,13 +111,16 @@ def main(argv=sys.argv):
     N = argumentsValues['particle']
     lam = argumentsValues['lambda']
     model = ["noise", argumentsValues['data_type'], ["baseline"] * num_baseline, ["delta"] * num_delta, ["variance"] * num_variance, argumentsValues['depth']]        # [noise, model, sequencing depth, baseline, delta, inverse dispersion]
-    search_area = np.array([float(argumentsValues['noise'][0]), float(argumentsValues['noise'][1]), float(argumentsValues['baseline'][0]), float(argumentsValues['baseline'][1]), float(argumentsValues['delta'][0]), float(argumentsValues['delta'][1]), float(argumentsValues['variance'][0]), float(argumentsValues['variance'][1])])        # [noise_range, baseline_range, delta_range, variance_range]
+    search_area = np.array([argumentsValues['noise'][0], argumentsValues['noise'][1], argumentsValues['baseline'][0], argumentsValues['baseline'][1], argumentsValues['delta'][0], argumentsValues['delta'][1], argumentsValues['variance'][0], argumentsValues['variance'][1]])        # [noise_range, baseline_range, delta_range, variance_range]
     dim_unk = [num_gene ** 2, 1, num_baseline, num_delta, num_variance]       # dim_unk = [the number of unknown discrete parameter, the number of unknown continous parameter]
     
     inpt = np.zeros(num_gene)
-    if argumentsValues['damage'] != False:
-        inpt[argumentsValues['damage'] - 1,] = 1
-    bias = -1/2 * np.ones(num_gene) + inpt
+    if argumentsValues['pos_bias'] != False:
+        if argumentsValues['pos_bias'] == 'All':
+            inpt = np.ones(num_gene)
+        else:
+            inpt[np.array(argumentsValues['pos_bias']) - 1,] = 1
+    pos_bias = -1/2 * np.ones(num_gene) + inpt
 
     if argumentsValues['data_type'] == 'NB':
         print(argumentsValues.items())
@@ -129,7 +134,7 @@ def main(argv=sys.argv):
     all_poss_state = np.array(all_poss_state)
     result = []
     for _ in range(argumentsValues['running_time']):
-        [beta, unk, school] = fish_school_search(dim_unk, num_gene, bias, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample)
+        [beta, unk, school] = fish_school_search(dim_unk, num_gene, pos_bias, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample)
         result.append((beta, unk))
     result.sort(key=lambda x: (-x[0], sum(abs(x[1][:num_gene ** 2]))))
                 
