@@ -4,9 +4,9 @@
 import numpy as np
 import sys
 from itertools import product
-from PAPFA.fss import *
+from PALLAS.fss import *
 
-argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':22.52, 'pos_bias':False, 'sample':1, 'running_time':1, 'full_info':False}
+argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':1.02, 'pos_bias':False, 'sample':1, 'running_time':1, 'full_info':False}
 
 def main(argv=sys.argv):
     for arg in sys.argv:

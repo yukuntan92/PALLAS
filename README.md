@@ -63,7 +63,7 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 - **particle**: the number of particles in the auxiliary particle filter. The more particles involved, the more accurate of the probability will be estimated. Default value is two to the number of genes.
 
-- **depth**: the sequencing depth of gene (needed by RNA-Seq data only). Based on [3]: depth=1.02 (1K-50K reads); depth=22.52 (500K-550K reads); depth=196.43 (5M-5M+50K reads). Default value is 22.52.
+- **depth**: the sequencing depth of gene (needed by RNA-Seq data only). Based on [3]: depth=1.02 (1K-50K reads); depth=22.52 (500K-550K reads); depth=196.43 (5M-5M+50K reads). Default value is 1.02.
 
 - **pos_bias**: the default value is False (bias is -1/2), meaning that an equal number of activation and inhibition inputs will produce inhibition. The user can define any gene has a positive bias or all genes have poitive biases (1/2), e.g. pos_bias=All (all genes) or pos_bias=1 (the first gene has positive bias).  
 
