@@ -29,6 +29,7 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 - itertools
 - tqdm
 - scipy
+- operator
 
 ## Running instructions (the tool is executed from a command line)
 
@@ -41,7 +42,7 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 **There are several parameters that can be adjusted by the user which can make the inference more accurate. (Optional)**
 
-- **noise**: the search space of process noise need to be given with format "x-x" ("lower-upper"). The process noise is the noise when the gene transit from one state to another. 0-0.1 is default which means at most 10% probability that gene get opposite value.
+- **noise**: the search space of process noise need to be given with format "x-x" ("lower-upper"). The process noise is the noise when the gene transit from one state to another. 0.05 is default which means 5% probability that gene get opposite value.
 
 - **baseline**: the search space for down expressed gene level is needed with format "x-x". Default range is based on minimum value and mean value of the dataset.
 
@@ -65,7 +66,9 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 - **depth**: the sequencing depth of gene (needed by RNA-Seq data only). Based on [3]: depth=1.02 (1K-50K reads); depth=22.52 (500K-550K reads); depth=196.43 (5M-5M+50K reads). Default value is 1.02.
 
-- **pos_bias**: the default value is False (bias is -1/2), meaning that an equal number of activation and inhibition inputs will produce inhibition. The user can define any gene has a positive bias or all genes have poitive biases (1/2), e.g. pos_bias=All (all genes) or pos_bias=1 (the first gene has positive bias).  
+- **bias**: the regulation biases can take two values: 1/2 (positive bias) or -1/2 (negative bias). A positve bias means that an equal number of activation and inhibition inputs will produce activation. The default value is False, meaning that there is no prior knownledge of the bias and all the bias for each gene should be searched. The user can also input a file which contains the prior knowledge of bias, e.g. known_bias.txt file in the example folder (first row is the title and each column is split by tab).
+
+- **net**: the gene regulatory network which is the goal of this tool. The default value is False, meaning that there is no prior knownledge for the network and all the connections between genes need to be estimated. The user can also input a file which contains the prior knowledge in the case that they already known some interaction between genes, e.g. known_net.txt file in the example folder (first row is the title and each column is split by tab).
 
 - **sample**: the number of samples in the input data. Default is 1.
 
@@ -95,15 +98,14 @@ The 1st line is gene_id. From the 2rd line to the 7th line are the microarray ti
 
 ## Examples
 
-Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition with data length equal to forty. Since the p53-MDM2 network is small which just has only 4 genes, so we set iteration equal to 1000 to save time while ensuring accuracy. However, if the network is larger than that or you perfer more stable result, the default value 5000 will be a good selection.
+Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition (positive bias for the first gene) with data length equal to forty. In this example, we showed how to use the prior knownledge, and because of the that, the interactions which need to be estimated becomes less, so we set iteration equal to 200 to save time while ensuring accuracy. However, without the prior knownledge or you perfer more stable result, the default value 5000 will be a good selection.
 
-`./PALLAS.py input=example/micro_data.txt data_type=microarray pos_bias=1 iteration=1000 full_info=True`
+`./PALLAS.py input=example/micro_data.txt data_type=microarray bias=example/known_bias.txt net=example/known_net.txt iteration=200 full_info=True`
 
 ```
-dict_items([('input', 'example/micro_data.txt'), ('data_type', 'Gaussian'), ('noise', [0.05, 0.05]), ('baseline', [5.2089995, 38.9329854040625]), ('delta', [8.009887228645832, 57.75364759]), ('variance', [0.01, 126.36746947304513]), ('diff_baseline', False), ('diff_delta', False), ('diff_variance', False), ('fish', 60), ('iteration', 1000), ('lambda', 0.01), ('particle', 16), ('pos_bias', [1]), ('sample', 1), ('running_time', 1), ('full_info', True)])
-
-100%|██████████████████████████████████████████████████████| 1000/1000 [12:26<00:00,  1.34it/s]
-
+dict_items([('input', 'example/micro_data.txt'), ('data_type', 'Gaussian'), ('noise', [0.05, 0.05]), ('baseline', [5.2089995, 38.9329854040625]), ('delta', [8.009887228645832, 57.75364759]), ('variance', [0.01, 126.36746947304513]), ('diff_baseline', False), ('diff_delta', False), ('diff_variance', False), ('fish', 24), ('iteration', 200), ('lambda', 0.01), ('particle', 16), ('bias', 'example/known_bias.txt'), ('net', 'example/known_net.txt'), ('sample', 1), ('running_time', 1), ('full_info', True)])
+100%|█████████████████████████████████████████████████████████████| 200/200 [01:01<00:00,  3.32it/s]
+Ranking 1
 Source	Target	Interaction
 
 3	1	inhibition
@@ -122,19 +124,23 @@ Source	Target	Interaction
 
 3	4	activation
 
-process noise = 0.06
+bias = [ 0.5 -0.5 -0.5 -0.5]
 
-baseline = 30.58
+process noise = 0.05
 
-delta = 20.04
+baseline = 28.84
 
-environmental noise = 66.44
+delta = 21.55
+
+environmental noise = 110.87
+
+log-likelihood = -17.526
 ```
 
 
 ## Reference
 
-1. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "PALLAS: Penalized mAximum LikeLihood via pArticle Swarm optimization for Inference of Gene Regulatory Networks." in process
+1. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "PALLAS: Penalized mAximum LikeLihood via pArticle Swarm optimization for Inference of Gene Regulatory Networks from Time Series Data." in process
 
 2. Tan, Yukun, Fernando B. Lima Neto, and Ulisses Braga Neto. "Inference of Gene Regulatory Networks by Maximum-likelihood Adaptive Filtering and Discrete Fish School Search." 2018 IEEE 28th International Workshop on Machine Learning for Signal Processing (MLSP). IEEE, 2018.
 

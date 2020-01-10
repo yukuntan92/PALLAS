@@ -176,7 +176,7 @@ def main(argv=sys.argv):
         if known_bias is not None:
             for j in range(len(known_bias)):
                 res = np.insert(res, int(num_gene ** 2 + known_bias[j][0]-1), known_bias[j][1])
-        print(res)
+#        print(res)
         print('Ranking' + ' ' + str(num))
         print('Source\tTarget\tInteraction\n')
         for j in range(num_gene ** 2):
