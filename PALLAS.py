@@ -5,8 +5,9 @@ import numpy as np
 import sys
 from itertools import product
 from PALLAS.fss import *
+from operator import itemgetter
 
-argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':1.02, 'pos_bias':False, 'sample':1, 'running_time':1, 'full_info':False}
+argumentsValues = {'input':'', 'data_type':'', 'noise':[0.05, 0.05], 'baseline':'', 'delta':'', 'variance':'', 'diff_baseline':False, 'diff_delta':False, 'diff_variance':False, 'fish':'', 'iteration':5000, 'lambda':0.01, 'particle':'', 'depth':1.02, 'bias':False, 'net':False, 'sample':1, 'running_time':1, 'full_info':False}
 
 def main(argv=sys.argv):
     for arg in sys.argv:
@@ -36,13 +37,16 @@ def main(argv=sys.argv):
                     argumentsValues[name] = True
                 else:
                     argumentsValues[name] = False
-            elif name == 'pos_bias':
+            elif name == 'bias':
                 if val == 'False':
                     argumentsValues[name] = False
-                elif val == 'All':
-                    argumentsValues[name] = 'All'
                 else:
-                    argumentsValues[name] = [int(i) for i in list(val.split(','))]
+                    argumentsValues[name] = val
+            elif name == 'net':
+                if val == 'False':
+                    argumentsValues[name] = False
+                else:
+                    argumentsValues[name] = val
 
     data = []
     if argumentsValues['data_type'] == 'NB':
@@ -61,14 +65,45 @@ def main(argv=sys.argv):
                 data.append([float(i) for i in l])
 
     data = np.array(data)
-    num_gene = len(data[0])
     data_max = np.max(data)
     data_min = np.min(data)
     data_mean = np.mean(data)
+    num_gene = len(data[0])
+   
+    known_net = []
+    if argumentsValues['net'] == False:
+        num_net = num_gene ** 2
+    else:
+        with open(argumentsValues['net'], 'r') as f:
+            next(f)
+            n = 0
+            for line in f:
+                n += 1
+                line_data = line.split('\t')
+                l = [elem.rstrip() for elem in line_data]
+                known_net.append([int(i) for i in l])
+            num_net = num_gene ** 2 - n
+            known_net = sorted(known_net, key=itemgetter(1, 0))
+
+    known_bias = []
+    if argumentsValues['bias'] == False:
+        num_bias = num_gene
+    else:
+        with open(argumentsValues['bias'], 'r') as f:
+            next(f)
+            n = 0
+            for line in f:
+                n += 1
+                line_data = line.split('\t')
+                l = [elem.rstrip() for elem in line_data]
+                known_bias.append([float(i) for i in l])
+            num_bias = num_gene - n
+            known_bias = sorted(known_bias, key=itemgetter(0))
 
     num_baseline = 1
     num_delta = 1
     num_variance = 1
+    num_noise = 1
 
     if argumentsValues['particle'] == '':
         argumentsValues['particle'] = 2 ** num_gene
@@ -78,8 +113,10 @@ def main(argv=sys.argv):
         num_delta = num_gene
     if argumentsValues['diff_variance'] == True:
         num_variance = num_gene
+    if argumentsValues['noise'][0] == argumentsValues['noise'][1]:
+        num_noise = 0
     if argumentsValues['fish'] == '':
-        argumentsValues['fish'] = 3 * (num_gene ** 2 + num_baseline + num_delta + num_variance + 1)
+        argumentsValues['fish'] = 3 * (num_net + num_baseline + num_delta + num_variance + num_noise + num_bias)
 
     if argumentsValues['data_type'] == 'NB':
         data_min = data_min / argumentsValues['depth']
@@ -96,7 +133,7 @@ def main(argv=sys.argv):
             else:
                 argumentsValues['delta'] = [min(np.log(data_max) - np.log(data_mean), np.log(data_mean) - np.log(data_min)) / 3, np.log(data_max) - np.log(data_min)]
         if argumentsValues['variance'] == '':
-            argumentsValues['variance'] = [0.5, 8]
+            argumentsValues['variance'] = [0.5, 7]
     else:
         if argumentsValues['baseline'] == '':
             argumentsValues['baseline'] = [data_min, data_mean]
@@ -112,16 +149,8 @@ def main(argv=sys.argv):
     lam = argumentsValues['lambda']
     model = ["noise", argumentsValues['data_type'], ["baseline"] * num_baseline, ["delta"] * num_delta, ["variance"] * num_variance, argumentsValues['depth']]        # [noise, model, sequencing depth, baseline, delta, inverse dispersion]
     search_area = np.array([argumentsValues['noise'][0], argumentsValues['noise'][1], argumentsValues['baseline'][0], argumentsValues['baseline'][1], argumentsValues['delta'][0], argumentsValues['delta'][1], argumentsValues['variance'][0], argumentsValues['variance'][1]])        # [noise_range, baseline_range, delta_range, variance_range]
-    dim_unk = [num_gene ** 2, 1, num_baseline, num_delta, num_variance]       # dim_unk = [the number of unknown discrete parameter, the number of unknown continous parameter]
+    dim_unk = [num_net, num_bias, 1, num_baseline, num_delta, num_variance]       # dim_unk = [the number of unknown discrete parameter, the number of unknown continous parameter]
     
-    inpt = np.zeros(num_gene)
-    if argumentsValues['pos_bias'] != False:
-        if argumentsValues['pos_bias'] == 'All':
-            inpt = np.ones(num_gene)
-        else:
-            inpt[np.array(argumentsValues['pos_bias']) - 1,] = 1
-    pos_bias = -1/2 * np.ones(num_gene) + inpt
-
     if argumentsValues['data_type'] == 'NB':
         print(argumentsValues.items())
     else:
@@ -134,13 +163,20 @@ def main(argv=sys.argv):
     all_poss_state = np.array(all_poss_state)
     result = []
     for _ in range(argumentsValues['running_time']):
-        [beta, unk, school] = fish_school_search(dim_unk, num_gene, pos_bias, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample)
+        [beta, unk, school] = fish_school_search(dim_unk, num_gene, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, known_net, known_bias)
         result.append((beta, unk))
     result.sort(key=lambda x: (-x[0], sum(abs(x[1][:num_gene ** 2]))))
                 
     for i in range(argumentsValues['running_time']):
         num = i + 1
         res = result[i][1]
+        if known_net is not None:
+            for j in range(len(known_net)):
+                res = np.insert(res, int(((known_net[j][1]-1)*num_gene + known_net[j][0]-1)), known_net[j][2])
+        if known_bias is not None:
+            for j in range(len(known_bias)):
+                res = np.insert(res, int(num_gene ** 2 + known_bias[j][0]-1), known_bias[j][1])
+        print(res)
         print('Ranking' + ' ' + str(num))
         print('Source\tTarget\tInteraction\n')
         for j in range(num_gene ** 2):
@@ -150,12 +186,14 @@ def main(argv=sys.argv):
                 print(str(row) + '\t'+str(col) + '\t' + 'activation' + '\n')
             elif np.allclose(res[j], -1):
                 print(str(row) + '\t' + str(col) + '\t' + 'inhibition' + '\n')
-        noise = np.around(res[num_gene ** 2], decimals=3)
-        base = np.around(res[num_gene ** 2 + 1 : num_gene ** 2 + 1 + num_baseline], decimals=2)
-        delt = np.around(res[num_gene ** 2 + 1 + num_baseline : num_gene ** 2 + 1 + num_baseline + num_delta], decimals=2)
-        env_noise = np.around(res[num_gene ** 2 + 1 + num_baseline + num_delta :], decimals=2)
+        bias = res[num_gene ** 2 : num_gene ** 2 + num_gene]
+        noise = np.around(res[num_gene ** 2 + num_gene], decimals=3)
+        base = np.around(res[num_gene ** 2 + num_gene + 1 : num_gene ** 2 + num_gene + 1 + num_baseline], decimals=2)
+        delt = np.around(res[num_gene ** 2 + num_gene + 1 + num_baseline : num_gene ** 2 + num_gene + 1 + num_baseline + num_delta], decimals=2)
+        env_noise = np.around(res[num_gene ** 2 + num_gene + 1 + num_baseline + num_delta :], decimals=2)
         likelihood = np.around(result[i][0], decimals=3)
         if argumentsValues['full_info']:
+            print('bias = {}'.format(str(bias) + '\n'))
             print('process noise = {}'.format(str(noise) + '\n'))
             print('baseline = {}'.format('\t'.join(map(str, base)) + '\n'))
             print('delta = {}'.format('\t'.join(map(str, delt)) + '\n'))

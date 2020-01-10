@@ -6,7 +6,7 @@ import numpy as np
 from .update_mat import *
 from .net_model import *
 
-def apf(N, all_poss_state, model, observation, dim_unk, num_gene, unk, bias, lam, num_sample):
+def apf(N, all_poss_state, model, observation, dim_unk, num_gene, unk, lam, num_sample, known_net, known_bias):
     '''
     Input:
             N: number of particles
@@ -24,12 +24,14 @@ def apf(N, all_poss_state, model, observation, dim_unk, num_gene, unk, bias, lam
             the probability of the esitmated value which given by fss.py based on the input dataset
 
     '''
-    next_state, net_connection = net_model(all_poss_state, dim_unk, num_gene, unk, bias)
+    unk_net = unk[:dim_unk[0]]
+    unk_bias = unk[dim_unk[0] : dim_unk[0] + dim_unk[1]]
+    model[0] = unk[dim_unk[0] + dim_unk[1]]
+    model[2] = unk[dim_unk[0] + dim_unk[1] + dim_unk[2] : dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3]]
+    model[3] = unk[dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3] : dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3] + dim_unk[4]]
+    model[4] = unk[dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3] + dim_unk[4] : dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3] + dim_unk[4] + dim_unk[5]]
+    next_state, net_connection = net_model(all_poss_state, dim_unk, num_gene, unk_net, unk_bias, known_net, known_bias)
     match_state = np.dot(next_state, 1 << np.arange(num_gene-1, -1, -1))
-    model[0] = unk[dim_unk[0]]
-    model[2] = unk[dim_unk[0] + dim_unk[1] : dim_unk[0] + dim_unk[1] + dim_unk[2]]
-    model[3] = unk[dim_unk[0] + dim_unk[1] + dim_unk[2] : dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3]]
-    model[4] = unk[dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3] : dim_unk[0] + dim_unk[1] + dim_unk[2] + dim_unk[3] + dim_unk[4]]
     n = len(observation)
     if n % num_sample != 0:
         raise TypeError('missing value or incorrect sample size')

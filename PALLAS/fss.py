@@ -5,7 +5,7 @@ import numpy as np
 from .apf import *
 from tqdm import tqdm
 
-def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, bias, model, observation, thresh, all_poss_state, N, lam, num_sample):
+def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias):
     '''
     Input: 
             best_fish: the optimal position of the search space
@@ -30,13 +30,13 @@ def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_
         new_position = np.zeros((total_dim,))
         random_step = np.zeros((total_dim,))
         for j in range(total_dim):  # generate random step for all the dimensions in fish
-            if j < dim[0]:
+            if j < dim[0] + dim[1]:
                 random_step[j] = np.random.uniform(-1, 1)
-            elif j < dim[0] + dim[1]:
-                random_step[j] = parameter_curr_step_individual[0] * np.random.uniform(-1, 1)
             elif j < dim[0] + dim[1] + dim[2]:
-                random_step[j] = parameter_curr_step_individual[1] * np.random.uniform(-1, 1)
+                random_step[j] = parameter_curr_step_individual[0] * np.random.uniform(-1, 1)
             elif j < dim[0] + dim[1] + dim[2] + dim[3]:
+                random_step[j] = parameter_curr_step_individual[1] * np.random.uniform(-1, 1)
+            elif j < dim[0] + dim[1] + dim[2] + dim[3] + dim[4]:
                 random_step[j] = parameter_curr_step_individual[2] * np.random.uniform(-1, 1)
             elif j < total_dim:
                 random_step[j] = parameter_curr_step_individual[3] * np.random.uniform(-1, 1)
@@ -56,6 +56,23 @@ def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_
                 random_step[j] = -1
             else:
                 random_step[j] = 0
+        if dim[1] != 0:
+            if all(k > 0 for k in random_step[dim[0]:dim[0]+dim[1]]):
+                pos_bias = max(random_step[dim[0]:dim[0]+dim[1]]) * thresh
+                neg_bias = 0
+            elif all(k < 0 for k in random_step[dim[0]:dim[0]+dim[1]]):
+                pos_bias = 0
+                neg_bias = min(random_step[dim[0]:dim[0]+dim[1]]) * thresh
+            else:
+                pos_bias = max(random_step[dim[0]:dim[0]+dim[1]]) * thresh
+                neg_bias = min(random_step[dim[0]:dim[0]+dim[1]]) * thresh
+            for j in range(dim[0], dim[0]+dim[1]):
+                if random_step[j] > pos_bias:
+                    random_step[j] = 1
+                elif random_step[j] < neg_bias:
+                    random_step[j] = -1
+                else:
+                    random_step[j] = 0
         for j in range(total_dim):
             new_position[j] = school[i][j] + random_step[j]   # displacement of the fish and handle the case when moving out of the boundary
             if j < dim[0]:
@@ -63,17 +80,22 @@ def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_
                     new_position[j] = min_func
                 elif new_position[j] > max_func:
                     new_position[j] = max_func
-            elif j < dim[0] + dim[1]:
+            elif j < dim[0] + dim[1] and dim[1] != 0:
+                if new_position[j] < -1/2:
+                    new_position[j] = -1/2
+                elif new_position[j] > 1/2:
+                    new_position[j] = 1/2
+            elif j < dim[0] + dim[1] + dim[2]:
                 if new_position[j] < search_area[0]:
                     new_position[j] = search_area[0] 
                 elif new_position[j] > search_area[1]:
                     new_position[j] = search_area[1] 
-            elif j < dim[0] + dim[1] + dim[2]:
+            elif j < dim[0] + dim[1] + dim[2] + dim[3]:
                 if new_position[j] < search_area[2]:
                     new_position[j] = search_area[2]
                 elif new_position[j] > search_area[3]:
                     new_position[j] = search_area[3]
-            elif j < dim[0] + dim[1] + dim[2] + dim[3]:
+            elif j < dim[0] + dim[1] + dim[2] + dim[3] + dim[4]:
                 if new_position[j] < search_area[4]:
                     new_position[j] = search_area[4]
                 elif new_position[j] > search_area[5]:
@@ -83,7 +105,7 @@ def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_
                     new_position[j] = search_area[6]
                 elif new_position[j] > search_area[7]:
                     new_position[j] = search_area[7]
-        curr_cost = apf(N, all_poss_state, model, observation, dim, num_gene, new_position, bias, lam, num_sample)   # calculate the fitness function
+        curr_cost = apf(N, all_poss_state, model, observation, dim, num_gene, new_position, lam, num_sample, known_net, known_bias)   # calculate the fitness function
         if curr_cost > cost[i]:  # update the currently optimal position and fitness function value
             delta_cost = curr_cost - cost[i]
             cost[i] = curr_cost
@@ -151,6 +173,23 @@ def collective_instinctive_movement(school, dim, delta_position, delta_cost, min
             instinctive_step[i] = -1
         else:
             instinctive_step[i] = 0
+    if dim[1] != 0:
+        if all(k > 0 for k in instinctive_step[dim[0]:dim[0]+dim[1]]):
+            pos_bias = max(instinctive_step[dim[0]:dim[0]+dim[1]]) * thresh
+            neg_bias = 0
+        elif all(k < 0 for k in instinctive_step[dim[0]:dim[0]+dim[1]]):
+            pos_bias = 0
+            neg_bias = min(instinctive_step[dim[0]:dim[0]+dim[1]]) * thresh
+        else:
+            pos_bias = max(instinctive_step[dim[0]:dim[0]+dim[1]]) * thresh
+            neg_bias = min(instinctive_step[dim[0]:dim[0]+dim[1]]) * thresh
+        for i in range(dim[0], dim[0]+dim[1]):
+            if instinctive_step[i] > pos_bias:
+                instinctive_step[i] = 1
+            elif instinctive_step[i] < neg_bias:
+                instinctive_step[i] = -1
+            else:
+                instinctive_step[i] = 0
     for fish in school:
         new_position = np.zeros((total_dim,))
         for i in range(total_dim):
@@ -160,17 +199,22 @@ def collective_instinctive_movement(school, dim, delta_position, delta_cost, min
                     new_position[i] = min_func
                 elif new_position[i] > max_func:
                     new_position[i] = max_func
-            elif i < dim[0] + dim[1]:
+            elif i < dim[0] + dim[1] and dim[1] != 0:
+                if new_position[i] < -1/2:
+                    new_position[i] = -1/2
+                elif new_position[i] > 1/2:
+                    new_position[i] = 1/2
+            elif i < dim[0] + dim[1] + dim[2]:
                 if new_position[i] < search_area[0]:
                     new_position[i] = search_area[0] 
                 elif new_position[i] > search_area[1]:
                     new_position[i] = search_area[1] 
-            elif i < dim[0] + dim[1] + dim[2]:
+            elif i < dim[0] + dim[1] + dim[2] + dim[3]:
                 if new_position[i] < search_area[2]:
                     new_position[i] = search_area[2]
                 elif new_position[i] > search_area[3]:
                     new_position[i] = search_area[3]
-            elif i < dim[0] + dim[1] + dim[2] + dim[3]:
+            elif i < dim[0] + dim[1] + dim[2] + dim[3] + dim[4]:
                 if new_position[i] < search_area[4]:
                     new_position[i] = search_area[4]
                 elif new_position[i] > search_area[5]:
@@ -195,7 +239,7 @@ def calculate_barycenter(weight, dim, school):
     barycenter = barycenter / density
     return barycenter
 
-def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, bias, model, observation, thresh, all_poss_state, N, lam, num_sample):
+def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias):
     '''
     Input:
             parameter_curr_step_volitive: step size of volitive movement which equal to twice of individual step size
@@ -214,13 +258,13 @@ def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weigh
         new_position = np.zeros((total_dim,))
         step = np.zeros((total_dim,))
         for j in range(total_dim):
-            if j < dim[0]:
+            if j < dim[0] + dim[1]:
                 step[j] = (fish[j] - barycenter[j]) * np.random.uniform(0, 1)
-            elif j < dim[0] + dim[1]:
-                step[j] = (fish[j] - barycenter[j]) * parameter_curr_step_volitive[0] * np.random.uniform(0, 1)
             elif j < dim[0] + dim[1] + dim[2]:
-                step[j] = (fish[j] - barycenter[j]) * parameter_curr_step_volitive[1] * np.random.uniform(0, 1)
+                step[j] = (fish[j] - barycenter[j]) * parameter_curr_step_volitive[0] * np.random.uniform(0, 1)
             elif j < dim[0] + dim[1] + dim[2] + dim[3]:
+                step[j] = (fish[j] - barycenter[j]) * parameter_curr_step_volitive[1] * np.random.uniform(0, 1)
+            elif j < dim[0] + dim[1] + dim[2] + dim[3] + dim[4]:
                 step[j] = (fish[j] - barycenter[j]) * parameter_curr_step_volitive[2] * np.random.uniform(0, 1)
             elif j < total_dim:
                 step[j] = (fish[j] - barycenter[j]) * parameter_curr_step_volitive[3] * np.random.uniform(0, 1)
@@ -240,6 +284,23 @@ def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weigh
                 step[j] = -1
             else:
                 step[j] = 0
+        if dim[1] != 0:
+            if all(q > 0 for q in step[dim[0]:dim[0]+dim[1]]):
+                pos_bias = max(step[dim[0]:dim[0]+dim[1]]) * thresh
+                neg_bias = 0
+            elif all(q < 0 for q in step[dim[0]:dim[0]+dim[1]]):
+                pos_bias = 0
+                neg_bias = min(step[dim[0]:dim[0]+dim[1]]) * thresh
+            else:
+                pos_bias = max(step[dim[0]:dim[0]+dim[1]]) * thresh
+                neg_bias = min(step[dim[0]:dim[0]+dim[1]]) * thresh
+            for j in range(dim[0], dim[0]+dim[1]):
+                if step[j] > pos_bias:
+                    step[j] = 1
+                elif step[j] < neg_bias:
+                    step[j] = -1
+                else:
+                    step[j] = 0
         for j in range(total_dim):
             if curr_weight_school > prev_weight_school:
                 new_position[j] = fish[j] - step[j]
@@ -250,17 +311,22 @@ def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weigh
                     new_position[j] = min_func
                 elif new_position[j] > max_func:
                     new_position[j] = max_func
-            elif j < dim[0] + dim[1]:
+            elif j < dim[0] + dim[1] and dim[1] != 0:
+                if new_position[j] < -1/2:
+                    new_position[j] = -1/2 
+                elif new_position[j] > 1/2:
+                    new_position[j] = 1/2 
+            elif j < dim[0] + dim[1] + dim[2]:
                 if new_position[j] < search_area[0]:
                     new_position[j] = search_area[0] 
                 elif new_position[j] > search_area[1]:
                     new_position[j] = search_area[1] 
-            elif j < dim[0] + dim[1] + dim[2]:
+            elif j < dim[0] + dim[1] + dim[2] + dim[3]:
                 if new_position[j] < search_area[2]:
                     new_position[j] = search_area[2]
                 elif new_position[j] > search_area[3]:
                     new_position[j] = search_area[3]
-            elif j < dim[0] + dim[1] + dim[2] + dim[3]:
+            elif j < dim[0] + dim[1] + dim[2] + dim[3] + dim[4]:
                 if new_position[j] < search_area[4]:
                     new_position[j] = search_area[4]
                 elif new_position[j] > search_area[5]:
@@ -271,7 +337,7 @@ def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weigh
                 elif new_position[j] > search_area[7]:
                     new_position[j] = search_area[7]
         school_update_volitive.append(new_position)
-        cost_volitive = apf(N, all_poss_state, model, observation, dim, num_gene, new_position, bias, lam, num_sample)
+        cost_volitive = apf(N, all_poss_state, model, observation, dim, num_gene, new_position, lam, num_sample, known_net, known_bias)
         cost.append(cost_volitive)
         if cost_volitive > best_cost:
             best_cost = cost_volitive
@@ -296,21 +362,23 @@ def sample(school_size , min_func, max_func, search_area, dim):
     '''
     total_dim = sum(dim)
     net = np.zeros((school_size, dim[0]))
-    noise = np.zeros((school_size, dim[1]))
-    base = np.zeros((school_size, dim[2]))
-    delta = np.zeros((school_size, dim[3]))
-    vari = np.zeros((school_size, dim[4]))
+    bias = np.zeros((school_size, dim[1]))
+    noise = np.zeros((school_size, dim[2]))
+    base = np.zeros((school_size, dim[3]))
+    delta = np.zeros((school_size, dim[4]))
+    vari = np.zeros((school_size, dim[5]))
     school = np.zeros((school_size, total_dim))
     for i in range(school_size):
         net[i] = np.random.uniform(min_func, max_func, dim[0])
-        noise[i] = np.random.uniform(search_area[0], search_area[1], dim[1])
-        base[i] = np.random.uniform(search_area[2], search_area[3], dim[2])
-        delta[i] = np.random.uniform(search_area[4], search_area[5], dim[3])
-        vari[i] = np.random.uniform(search_area[6], search_area[7], dim[4])
-        school[i] = np.append(np.append(np.append(np.append(np.rint(net[i]), noise[i]), base[i]), delta[i]), vari[i])
+        bias[i] = np.random.uniform(min_func, max_func, dim[1])
+        noise[i] = np.random.uniform(search_area[0], search_area[1], dim[2])
+        base[i] = np.random.uniform(search_area[2], search_area[3], dim[3])
+        delta[i] = np.random.uniform(search_area[4], search_area[5], dim[4])
+        vari[i] = np.random.uniform(search_area[6], search_area[7], dim[5])
+        school[i] = np.append(np.append(np.append(np.append(np.append(np.rint(net[i]), np.array([1/2 if i > 0 else -1/2 for i in bias[i]])), noise[i]), base[i]), delta[i]), vari[i])
     return school 
 
-def fish_school_search(dim, num_gene, bias, model, observation, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, min_func= -1, max_func= 1, min_weight = 1):
+def fish_school_search(dim, num_gene, model, observation, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, known_net, known_bias, min_func= -1, max_func= 1, min_weight = 1):
     '''
     fish school search algorithm:
     1. individual movement
@@ -332,15 +400,15 @@ def fish_school_search(dim, num_gene, bias, model, observation, all_poss_state, 
     school = sample(school_size, min_func, max_func, search_area, dim)
     for i in range(school_size):
         position = school[i]
-        likelihood = apf(N, all_poss_state, model, observation, dim, num_gene, position, bias, lam, num_sample)
+        likelihood = apf(N, all_poss_state, model, observation, dim, num_gene, position, lam, num_sample, known_net, known_bias)
         cost.append(likelihood)
     weight = [(max_weight / 2.0) for _ in range(len(school))]
     for j in tqdm(range(num_iterations)):
         thresh = j/num_iterations
-        [best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual] = individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, bias, model, observation, thresh, all_poss_state, N, lam, num_sample)
+        [best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual] = individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias)
         weight = feeding(weight, max_weight, min_weight, delta_cost_update_individual)
         school_update_instinctive = collective_instinctive_movement(school_update_individual, dim, delta_position_update_individual, delta_cost_update_individual, min_func, max_func, search_area, thresh)
-        [curr_weight_school, school, best_fish, cost, best_cost] = collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school_update_instinctive, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, bias, model, observation, thresh, all_poss_state, N, lam, num_sample)
+        [curr_weight_school, school, best_fish, cost, best_cost] = collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school_update_instinctive, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias)
         [parameter_curr_step_individual, parameter_curr_step_volitive] = update_step(num_iterations, j, parameter_step_individual_init, parameter_step_individual_final)
     return best_cost, best_fish, school
 
