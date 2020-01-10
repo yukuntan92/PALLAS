@@ -66,9 +66,9 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 - **depth**: the sequencing depth of gene (needed by RNA-Seq data only). Based on [3]: depth=1.02 (1K-50K reads); depth=22.52 (500K-550K reads); depth=196.43 (5M-5M+50K reads). Default value is 1.02.
 
-- **bias**: the regulation biases can take two values: 1/2 (positive bias) or -1/2 (negative bias). A positve bias means that an equal number of activation and inhibition inputs will produce activation. The default value is False, meaning that there is no prior knownledge of the bias and all the bias for each gene should be searched. The user can also input a file which contains the prior knowledge of bias, e.g. known_bias.txt file in the example folder (first row is the title and each column is split by tab).
+- **bias**: the regulation biases can take two values: 1/2 (positive bias) or -1/2 (negative bias). A positve bias means that an equal number of activation and inhibition inputs will produce activation. The default value is False, meaning that there is no prior knownledge of the bias and all the biases for genes should be searched. The user can also input a file which contains the prior knowledge of bias, e.g. known_bias.txt file in the example folder (the first row is title and each column is split by tab).
 
-- **net**: the gene regulatory network which is the goal of this tool. The default value is False, meaning that there is no prior knownledge for the network and all the connections between genes need to be estimated. The user can also input a file which contains the prior knowledge in the case that they already known some interaction between genes, e.g. known_net.txt file in the example folder (first row is the title and each column is split by tab).
+- **net**: the gene regulatory network which is the goal of this tool. The default value is False, meaning that there is no prior knownledge for the network and all the connections between genes need to be estimated. The user can also input a file which contains the prior knowledge in the case that they already known some interactions between genes, e.g. known_net.txt file in the example folder (the first row is title and each column is split by tab).
 
 - **sample**: the number of samples in the input data. Default is 1.
 
