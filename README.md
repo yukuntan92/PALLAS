@@ -66,9 +66,9 @@ A Python package for inference of gene regulatory networks from noisy gene expre
 
 - **depth**: the sequencing depth of gene (needed by RNA-Seq data only). Based on [3]: depth=1.02 (1K-50K reads); depth=22.52 (500K-550K reads); depth=196.43 (5M-5M+50K reads). Default value is 1.02.
 
-- **bias**: the regulation biases can take two values: 1/2 (positive bias) or -1/2 (negative bias). A positve bias means that an equal number of activation and inhibition inputs will produce activation. The default value is False, meaning that there is no prior knownledge of the bias and all the biases for genes should be searched. The user can also input a file which contains the prior knowledge of bias, e.g. known_bias.txt file in the example folder (the first row is title and each column is split by tab).
+- **bias**: the regulation biases can take two values: 1/2 (positive bias) or -1/2 (negative bias). A positve bias means that an equal number of activation and inhibition inputs will produce activation. The default value is False, meaning that there is no prior knowledge of the bias and all the biases for genes should be searched. The user can also input a file which contains the prior knowledge of bias, e.g. known_bias.txt file in the example folder (the first row is title and each column is split by tab).
 
-- **net**: the gene regulatory network which is the goal of this tool. The default value is False, meaning that there is no prior knownledge for the network and all the connections between genes need to be estimated. The user can also input a file which contains the prior knowledge in the case that they already known some interactions between genes, e.g. known_net.txt file in the example folder (the first row is title and each column is split by tab).
+- **net**: the gene regulatory network which is the goal of this tool. The default value is False, meaning that there is no prior knowledge for the network and all the connections between genes need to be estimated. The user can also input a file which contains the prior knowledge in the case that they already known some interactions between genes, e.g. known_net.txt file in the example folder (the first row is title and each column is split by tab).
 
 - **sample**: the number of samples in the input data. Default is 1.
 
@@ -98,7 +98,7 @@ The 1st line is gene_id. From the 2rd line to the 7th line are the microarray ti
 
 ## Examples
 
-Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition (positive bias for the first gene) with data length equal to forty. In this example, we showed how to use the prior knownledge, and because of the that, the interactions which need to be estimated becomes less, so we set iteration equal to 200 to save time while ensuring accuracy. However, without the prior knownledge or you perfer more stable result, the default value 5000 will be a good selection.
+Use p53-MDM2 negative-feedback gene regulatory network as an example [1]. The microarray synthetic data is generated under DNA damage condition (positive bias for the first gene) with data length equal to forty. In this example, we showed how to use the prior knowledge, and because of the that, the interactions which need to be estimated becomes less, so we set iteration equal to 200 to save time while ensuring accuracy. However, without the prior knowledge or you perfer more stable result, the default value 5000 will be a good selection.
 
 `./PALLAS.py input=example/micro_data.txt data_type=microarray bias=example/known_bias.txt net=example/known_net.txt iteration=200 full_info=True`
 
