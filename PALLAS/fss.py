@@ -133,7 +133,11 @@ def individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_
             school_update_individual.append(school[i])
         delta_cost_update_individual.append(delta_cost)
         delta_position_update_individual.append(delta_position)
-    return best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual, record
+    if model[1] == 'mixed':
+        return best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual, record
+    else:
+        return best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual
+
 
 def feeding(weight, max_weight, min_weight, delta_cost):
     '''
@@ -370,7 +374,10 @@ def collective_volitive_movement(best_fish, best_cost, curr_weight_school, weigh
         if cost_volitive > best_cost:
             best_cost = cost_volitive
             best_fish = new_position
-    return curr_weight_school, school_update_volitive, best_fish, cost, best_cost, record
+    if model[1] == 'mixed':
+        return curr_weight_school, school_update_volitive, best_fish, cost, best_cost, record
+    else:
+        return curr_weight_school, school_update_volitive, best_fish, cost, best_cost
 
 def update_step(total_iter, curr_iter, parameter_step_individual_init, parameter_step_individual_final):
     '''
@@ -456,12 +463,19 @@ def fish_school_search(dim, num_gene, model, observation, all_poss_state, school
     weight = [(max_weight / 2.0) for _ in range(len(school))]
     for j in tqdm(range(num_iterations)):
         thresh = j/num_iterations
-        [best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual, record] = individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
-        #[best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual] = individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
+        if model[1] == 'mixed':
+            [best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual, record] = individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
+        else:
+            [best_fish, best_cost, school_update_individual, cost, delta_position_update_individual, delta_cost_update_individual] = individual_movement(best_fish, best_cost, cost, school, parameter_curr_step_individual, max_func, min_func, search_area, dim, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
         weight = feeding(weight, max_weight, min_weight, delta_cost_update_individual)
         school_update_instinctive = collective_instinctive_movement(school_update_individual, dim, delta_position_update_individual, delta_cost_update_individual, min_func, max_func, search_area, thresh, model)
-        [curr_weight_school, school, best_fish, cost, best_cost, record] = collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school_update_instinctive, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
-        #[curr_weight_school, school, best_fish, cost, best_cost] = collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school_update_instinctive, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
+        if model[1] == 'mixed':
+            [curr_weight_school, school, best_fish, cost, best_cost, record] = collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school_update_instinctive, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
+        else:
+            [curr_weight_school, school, best_fish, cost, best_cost] = collective_volitive_movement(best_fish, best_cost, curr_weight_school, weight, dim, school_update_instinctive, min_func, max_func, search_area, parameter_curr_step_volitive, num_gene, model, observation, thresh, all_poss_state, N, lam, num_sample, known_net, known_bias, M, tolerance)
         [parameter_curr_step_individual, parameter_curr_step_volitive] = update_step(num_iterations, j, parameter_step_individual_init, parameter_step_individual_final)
-    return best_cost, best_fish, school, record
+    if model[1] == 'mixed':
+        return best_cost, best_fish, school, record
+    else:
+        return best_cost, best_fish, school
 

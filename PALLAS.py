@@ -171,6 +171,8 @@ def main(argv=sys.argv):
         argumentsValues.pop('scale')
         argumentsValues.pop('variation')
         argumentsValues.pop('fold')
+        argumentsValues.pop('tolerance')
+        argumentsValues.pop('M')
         print(argumentsValues.items())
     elif argumentsValues['data_type'] == 'Gaussian':
         argumentsValues.pop('depth')
@@ -178,6 +180,8 @@ def main(argv=sys.argv):
         argumentsValues.pop('scale')
         argumentsValues.pop('variation')
         argumentsValues.pop('fold')
+        argumentsValues.pop('tolerance')
+        argumentsValues.pop('M')
         print(argumentsValues.items())
     else:
         argumentsValues.pop('baseline')
@@ -195,11 +199,13 @@ def main(argv=sys.argv):
     all_poss_state = np.array(all_poss_state)
     result = []
     for _ in range(argumentsValues['running_time']):
-        [beta, unk, school, record] = fish_school_search(dim_unk, num_gene, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, known_net, known_bias, M, tolerance)
-        #[beta, unk, school] = fish_school_search(dim_unk, num_gene, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, known_net, known_bias, M, tolerance)
+        if argumentsValues['data_type'] == 'mixed':
+            [beta, unk, school, record] = fish_school_search(dim_unk, num_gene, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, known_net, known_bias, M, tolerance)
+        else:
+            [beta, unk, school] = fish_school_search(dim_unk, num_gene, model, data, all_poss_state, school_size, num_iterations, N, lam, search_area, num_sample, known_net, known_bias, M, tolerance)
         result.append((beta, unk))
     result.sort(key=lambda x: (-x[0], sum(abs(x[1][:num_gene ** 2]))))
-    print(record)
+    #print(record)
                 
     for i in range(argumentsValues['running_time']):
         num = i + 1
